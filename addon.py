@@ -16,16 +16,14 @@
 '''
 
 
-import urlparse,sys
-
+import sys
+from tulip.compat import parse_qsl
 from resources.lib import eradio
 
-
-params = dict(urlparse.parse_qsl(sys.argv[2].replace('?','')))
+params = dict(parse_qsl(sys.argv[2].replace('?','')))
 
 action = params.get('action')
 url = params.get('url')
-
 
 if action is None:
     eradio.Indexer().root()
@@ -47,8 +45,8 @@ elif action == 'radios':
 elif action == 'dev_picks':
     eradio.Indexer().dev_picks()
 
-elif action == 'play':
-    eradio.Indexer().play(url)
+elif action == 'search':
+    eradio.Indexer().search()
 
-elif action == 'dev_play':
-    eradio.Indexer().dev_play(url)
+elif action in ['play', 'dev_play']:
+    eradio.Indexer().play(url, do_not_resolve=action == 'dev_play')

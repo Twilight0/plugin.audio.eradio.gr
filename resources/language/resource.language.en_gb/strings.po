@@ -28,6 +28,10 @@ msgctxt "#32005"
 msgid "Latest"
 msgstr ""
 
+msgctxt "#32006"
+msgid "Search"
+msgstr ""
+
 msgctxt "#32500"
 msgid "Next..."
 msgstr ""

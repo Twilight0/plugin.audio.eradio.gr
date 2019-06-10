@@ -15,27 +15,31 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
+from __future__ import absolute_import
+
 import json
-# noinspection PyUnresolvedReferences
+from functools import partial
 from tulip import bookmarks, directory, client, cache, control
+from tulip.compat import unicode, iteritems
+from tulip.cleantitle import strip_accents
 
 
 class Indexer:
 
     def __init__(self):
 
-        self.list = []
+        self.list = []; self.data = []
         self.base_link = 'http://eradio.mobi'
-        self.image_link = 'http://cdn.e-radio.gr/logos/%s'
+        self.image_link = 'http://cdn.e-radio.gr/logos/{0}'
         self.all_link = 'http://eradio.mobi/cache/1/1/medialist.json'
         self.trending_link = 'http://eradio.mobi/cache/1/1/medialistTop_trending.json'
         self.popular_link = 'http://eradio.mobi/cache/1/1/medialist_top20.json'
         self.new_link = 'http://eradio.mobi/cache/1/1/medialist_new.json'
         self.categories_link = 'http://eradio.mobi/cache/1/1/categories.json'
         self.regions_link = 'http://eradio.mobi/cache/1/1/regions.json'
-        self.category_link = 'http://eradio.mobi/cache/1/1/medialist_categoryID%s.json'
-        self.region_link = 'http://eradio.mobi/cache/1/1/medialist_regionID%s.json'
-        self.resolve_link = 'http://eradio.mobi/cache/1/1/media/%s.json'
+        self.category_link = 'http://eradio.mobi/cache/1/1/medialist_categoryID{0}.json'
+        self.region_link = 'http://eradio.mobi/cache/1/1/medialist_regionID{0}.json'
+        self.resolve_link = 'http://eradio.mobi/cache/1/1/media/{0}.json'
 
     def root(self):
 
@@ -45,28 +49,34 @@ class Indexer:
                 'action': 'radios',
                 'url': self.all_link,
                 'icon': 'all.png'
-            },
-
+            }
+            ,
             {
                 'title': control.lang(32002),
                 'action': 'bookmarks',
                 'icon': 'bookmarks.png'
-            },
-
+            }
+            ,
+            {
+                'title': control.lang(32006),
+                'action': 'search',
+                'icon': 'search.png'
+            }
+            ,
             {
                 'title': control.lang(32003),
                 'action': 'radios',
                 'url': self.trending_link,
                 'icon': 'trending.png'
-            },
-
+            }
+            ,
             {
                 'title': control.lang(32004),
                 'action': 'radios',
                 'url': self.popular_link,
                 'icon': 'popular.png'
-            },
-
+            }
+            ,
             {
                 'title': control.lang(32005),
                 'action': 'radios',
@@ -75,7 +85,7 @@ class Indexer:
             }
         ]
 
-        categories = cache.get(self.item_list_1, 24, self.categories_link)
+        categories = cache.get(self.directory_list, 24, self.categories_link)
 
         if categories is None:
             return
@@ -83,7 +93,7 @@ class Indexer:
         for i in categories:
             i.update({'icon': 'categories.png', 'action': 'radios'})
 
-        regions = cache.get(self.item_list_1, 24, self.regions_link)
+        regions = cache.get(self.directory_list, 24, self.regions_link)
 
         if regions is None:
             return
@@ -91,11 +101,33 @@ class Indexer:
         for i in regions:
             i.update({'icon': 'regions.png', 'action': 'radios'})
 
-        misc = [{'title': control.lang(32503), 'action': 'dev_picks', 'icon': 'recommended.png'}]
+        dev_picks_list = [{'title': control.lang(32503), 'action': 'dev_picks', 'icon': 'recommended.png'}]
 
-        self.list = radios + misc + categories + regions
+        self.list = radios + dev_picks_list + categories + regions
 
         directory.add(self.list, content='files')
+
+    def search(self):
+
+        input_str = control.inputDialog()
+
+        if not input_str:
+            return
+
+        self.list = [
+            i for i in self.radios(self.all_link, return_listing=True) if strip_accents(input_str.lower()) in i['title'].lower()
+        ]
+
+        if not self.list:
+            return
+
+        items_list = list(map(json.loads, set(map(partial(json.dumps, sort_keys=True), self.list))))
+
+        control.sortmethods('title')
+
+        del self.list
+
+        directory.add(items_list, infotype='Music')
 
     def bookmarks(self):
 
@@ -105,7 +137,8 @@ class Indexer:
             return
 
         for i in self.list:
-            bookmark = dict((k, v) for k, v in i.iteritems() if not k == 'next')
+
+            bookmark = dict((k, v) for k, v in iteritems(i) if not k == 'next')
             bookmark['delbookmark'] = i['url']
             i.update({'cm': [{'title': 32502, 'query': {'action': 'deleteBookmark', 'url': json.dumps(bookmark)}}]})
 
@@ -113,8 +146,9 @@ class Indexer:
 
         directory.add(self.list, infotype='Music')
 
-    def radios(self, url):
-        self.list = cache.get(self.item_list_2, 1, url)
+    def radios(self, url, return_listing=False):
+
+        self.list = cache.get(self.radios_list, 1, url)
 
         if self.list is None:
             return
@@ -122,12 +156,22 @@ class Indexer:
         for i in self.list:
             i.update({'action': 'play', 'isFolder': 'False'})
 
+        if url == self.all_link:
+
+            self.data = cache.get(self._devpicks, 6)
+            self.list.extend(self.data)
+
         for i in self.list:
-            bookmark = dict((k, v) for k, v in i.iteritems() if not k == 'next')
+            bookmark = dict((k, v) for k, v in iteritems(i) if not k == 'next')
             bookmark['bookmark'] = i['url']
             i.update({'cm': [{'title': 32501, 'query': {'action': 'addBookmark', 'url': json.dumps(bookmark)}}]})
 
-        directory.add(self.list, infotype='Music')
+        control.sortmethods('title')
+
+        if return_listing:
+            return self.list
+        else:
+            directory.add(self.list, infotype='Music')
 
     def _devpicks(self):
 
@@ -137,11 +181,11 @@ class Indexer:
 
         for item in items:
 
-            name = client.parseDOM(item, 'name')[0]
+            name = unicode(client.parseDOM(item, 'name')[0])
             logo = client.parseDOM(item, 'logo')[0]
             url = client.parseDOM(item, 'url')[0]
 
-            self.list.append({'title': name, 'image': logo, 'url': url})
+            self.list.append({'title': name, 'image': logo, 'url': url, 'action': 'dev_play', 'isFolder': 'False'})
 
         return self.list
 
@@ -153,32 +197,33 @@ class Indexer:
             return
 
         for i in self.list:
-            i.update({'action': 'dev_play', 'isFolder': 'False'})
-
-        for i in self.list:
-            bookmark = dict((k, v) for k, v in i.iteritems() if not k == 'next')
+            bookmark = dict((k, v) for k, v in iteritems(i) if not k == 'next')
             bookmark['bookmark'] = i['url']
             i.update({'cm': [{'title': 32501, 'query': {'action': 'addBookmark', 'url': json.dumps(bookmark)}}]})
 
         directory.add(self.list, infotype='Music')
 
-    def play(self, url):
+    def play(self, url, do_not_resolve=False):
 
-        resolved = self.resolve(url)
+        if not do_not_resolve:
 
-        if resolved is None:
-            return
+            resolved = self.resolve(url)
+    
+            if resolved is None:
+                return
+    
+            title, url, image = resolved
+    
+            directory.resolve(url, {'title': title}, image)
+            
+        else:
 
-        title, url, image = resolved
+            directory.resolve(url)
 
-        directory.resolve(url, {'title': title}, image)
+    def directory_list(self, url):
 
-    def dev_play(self, url):
-
-        directory.resolve(url)
-
-    def item_list_1(self, url):
         try:
+
             self.list = []
 
             result = client.request(url, mobile=True)
@@ -188,78 +233,72 @@ class Indexer:
                 items = result['categories']
             elif 'countries' in result:
                 items = result['countries']
+
         except:
+
             return
 
         for item in items:
+
             try:
+
                 if 'categoryName' in item:
                     title = item['categoryName']
                 elif 'regionName' in item:
                     title = item['regionName']
                 title = client.replaceHTMLCodes(title)
-                title = title.encode('utf-8')
 
                 if 'categoryID' in item:
-                    url = self.category_link % str(item['categoryID'])
+                    url = self.category_link.format(str(item['categoryID']))
                 elif 'regionID' in item:
-                    url = self.region_link % str(item['regionID'])
+                    url = self.region_link.format(str(item['regionID']))
                 url = client.replaceHTMLCodes(url)
-                url = url.encode('utf-8')
 
                 self.list.append({'title': title, 'url': url})
+
             except:
+
                 pass
 
         return self.list
 
-    def item_list_2(self, url):
+    def radios_list(self, url):
 
         try:
+
             result = client.request(url, mobile=True)
             result = json.loads(result)
 
             items = result['media']
+
         except:
+
             return
 
         for item in items:
 
             try:
+
                 title = item['name'].strip()
                 title = client.replaceHTMLCodes(title)
-                title = title.encode('utf-8')
 
                 url = str(item['stationID'])
                 url = client.replaceHTMLCodes(url)
-                url = url.encode('utf-8')
 
                 image = item['logo']
-                image = self.image_link % image
+                image = self.image_link.format(image)
                 image = image.replace('/promo/', '/500/')
-                if image.endswith('/nologo.png'): image = '0'
+
+                if image.endswith('/nologo.png'):
+                    image = '0'
+
                 image = client.replaceHTMLCodes(image)
-                image = image.encode('utf-8')
 
                 self.list.append({'title': title, 'url': url, 'image': image})
+
             except:
+
                 pass
-
-        return self.list
-
-    def misc_list(self):
-
-        xml = client.request('http://alivegr.net/raw/radios.xml')
-
-        items = client.parseDOM(xml, 'station', attrs={'enable': '1'})
-
-        for item in items:
-
-            name = client.parseDOM(item, 'name')[0]
-            logo = client.parseDOM(item, 'logo')[0]
-            url = client.parseDOM(item, 'url')[0]
-
-            self.list.append({'title': name, 'icon': logo, 'url': url})
 
         return self.list
 
@@ -267,7 +306,7 @@ class Indexer:
 
         try:
 
-            url = self.resolve_link % url
+            url = self.resolve_link.format(url)
 
             result = client.request(url, mobile=True)
             result = json.loads(result)
@@ -275,25 +314,27 @@ class Indexer:
             item = result['media'][0]
 
             url = item['mediaUrl'][0]['liveURL']
-            if not url.startswith('http://'): url = '%s%s' % ('http://', url)
+
+            if not url.startswith('http://'):
+                url = '{0}{1}'.format('http://', url)
+
             url = client.replaceHTMLCodes(url)
-            url = url.encode('utf-8')
 
             # url = client.request(url, output='geturl')
 
             title = item['name'].strip()
             title = client.replaceHTMLCodes(title)
-            title = title.encode('utf-8')
 
             image = item['logo']
-            image = self.image_link % image
+            image = self.image_link.format(image)
             image = image.replace('/promo/', '/500/')
+
             if image.endswith('/nologo.png'):
                 image = '0'
-            image = client.replaceHTMLCodes(image)
-            image = image.encode('utf-8')
 
-            return (title, url, image)
+            image = client.replaceHTMLCodes(image)
+
+            return title, url, image
 
         except:
 

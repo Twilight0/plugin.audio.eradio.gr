@@ -28,6 +28,10 @@ msgctxt "#32005"
 msgid "Latest"
 msgstr "Πρόσφατα"
 
+msgctxt "#32006"
+msgid "Search"
+msgstr "Αναζήτηση"
+
 msgctxt "#32500"
 msgid "Next..."
 msgstr "Επόμενα..."
@@ -42,4 +46,4 @@ msgstr "Αφαίρεση από σελιδοδείκτες"
 
 msgctxt "#32503"
 msgid "Developer's picks"
-msgstr "Οι επιλογές του προγραμματιστή"
+msgstr "Οι επιλογές του συντάκτη"
