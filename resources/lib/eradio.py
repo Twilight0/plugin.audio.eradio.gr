@@ -114,14 +114,12 @@ class Indexer:
         if not input_str:
             return
 
-        self.list = [
+        items_list = [
             i for i in self.radios(self.all_link, return_listing=True) if strip_accents(input_str.lower()) in i['title'].lower()
         ]
 
-        if not self.list:
+        if not items_list:
             return
-
-        items_list = list(map(json.loads, set(map(partial(json.dumps, sort_keys=True), self.list))))
 
         control.sortmethods('title')
 
@@ -158,10 +156,10 @@ class Indexer:
 
         if url == self.all_link:
 
-            self.data = cache.get(self._devpicks, 6)
-            self.list.extend(self.data)
+            self.list.extend(cache.get(self._devpicks, 6))
 
         for i in self.list:
+
             bookmark = dict((k, v) for k, v in iteritems(i) if not k == 'next')
             bookmark['bookmark'] = i['url']
             i.update({'cm': [{'title': 32501, 'query': {'action': 'addBookmark', 'url': json.dumps(bookmark)}}]})
@@ -185,9 +183,9 @@ class Indexer:
             logo = client.parseDOM(item, 'logo')[0]
             url = client.parseDOM(item, 'url')[0]
 
-            self.list.append({'title': name, 'image': logo, 'url': url, 'action': 'dev_play', 'isFolder': 'False'})
+            self.data.append({'title': name, 'image': logo, 'url': url, 'action': 'dev_play', 'isFolder': 'False'})
 
-        return self.list
+        return self.data
 
     def dev_picks(self):
 
