@@ -1,49 +1,53 @@
 # Kodi Media Center language file
 # Addon Name: E-Radio
 # Addon id: plugin.audio.eradio.gr
-# Addon version: 1.0.0
-# Addon Provider: lambda
+# Addon version: 2.0.0
+# Addon Provider: twilight0
 
 msgid ""
 msgstr ""
 
 
-msgctxt "#32001"
+msgctxt "#30001"
 msgid "All"
 msgstr "Όλα"
 
-msgctxt "#32002"
+msgctxt "#30002"
 msgid "Bookmarks"
 msgstr "Σελιδοδείκτες"
 
-msgctxt "#32003"
+msgctxt "#30003"
 msgid "Trending"
 msgstr "Τάσεις"
 
-msgctxt "#32004"
+msgctxt "#30004"
 msgid "Popular"
 msgstr "Δημοφιλή"
 
-msgctxt "#32005"
+msgctxt "#30005"
 msgid "Latest"
 msgstr "Πρόσφατα"
 
-msgctxt "#32006"
+msgctxt "#30006"
 msgid "Search"
 msgstr "Αναζήτηση"
 
-msgctxt "#32500"
+msgctxt "#30007"
+msgid "No bookmarks found"
+msgstr "Δεν βρέθηκαν σελιδοδείκτες"
+
+msgctxt "#30500"
 msgid "Next..."
 msgstr "Επόμενα..."
 
-msgctxt "#32501"
+msgctxt "#30501"
 msgid "Add to bookmarks"
 msgstr "Προσθήκη στους σελιδοδείκτες"
 
-msgctxt "#32502"
+msgctxt "#30502"
 msgid "Remove from bookmarks"
 msgstr "Αφαίρεση από σελιδοδείκτες"
 
-msgctxt "#32503"
+msgctxt "#30503"
 msgid "Developer's picks"
 msgstr "Οι επιλογές του συντάκτη"

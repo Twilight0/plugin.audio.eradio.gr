@@ -1,24 +1,16 @@
 # -*- coding: utf-8 -*-
 
 '''
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    E-Radio Addon
+    Author Twilight0
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    SPDX-License-Identifier: GPL-3.0-only
+    See LICENSES/GPL-3.0-only for more information.
 '''
 
 from __future__ import absolute_import
 
 import json
-from functools import partial
 from tulip import bookmarks, directory, client, cache, control
 from tulip.compat import unicode, iteritems
 from tulip.cleantitle import strip_accents
@@ -45,40 +37,40 @@ class Indexer:
 
         radios = [
             {
-                'title': control.lang(32001),
+                'title': control.lang(30001),
                 'action': 'radios',
                 'url': self.all_link,
                 'icon': 'all.png'
             }
             ,
             {
-                'title': control.lang(32002),
+                'title': control.lang(30002),
                 'action': 'bookmarks',
                 'icon': 'bookmarks.png'
             }
             ,
             {
-                'title': control.lang(32006),
+                'title': control.lang(30006),
                 'action': 'search',
                 'icon': 'search.png'
             }
             ,
             {
-                'title': control.lang(32003),
+                'title': control.lang(30003),
                 'action': 'radios',
                 'url': self.trending_link,
                 'icon': 'trending.png'
             }
             ,
             {
-                'title': control.lang(32004),
+                'title': control.lang(30004),
                 'action': 'radios',
                 'url': self.popular_link,
                 'icon': 'popular.png'
             }
             ,
             {
-                'title': control.lang(32005),
+                'title': control.lang(30005),
                 'action': 'radios',
                 'url': self.new_link,
                 'icon': 'new.png'
@@ -101,7 +93,7 @@ class Indexer:
         for i in regions:
             i.update({'icon': 'regions.png', 'action': 'radios'})
 
-        dev_picks_list = [{'title': control.lang(32503), 'action': 'dev_picks', 'icon': 'recommended.png'}]
+        dev_picks_list = [{'title': control.lang(30503), 'action': 'dev_picks', 'icon': 'recommended.png'}]
 
         self.list = radios + dev_picks_list + categories + regions
 
@@ -115,7 +107,9 @@ class Indexer:
             return
 
         items_list = [
-            i for i in self.radios(self.all_link, return_listing=True) if strip_accents(input_str.lower()) in i['title'].lower()
+            i for i in self.radios(
+                self.all_link, return_listing=True
+            ) if strip_accents(input_str.lower()) in i['title'].lower()
         ]
 
         if not items_list:
@@ -131,14 +125,16 @@ class Indexer:
 
         self.list = bookmarks.get()
 
-        if self.list is None:
+        if not self.list:
+            na = [{'title': control.lang(30007), 'action': None}]
+            directory.add(na)
             return
 
         for i in self.list:
 
             bookmark = dict((k, v) for k, v in iteritems(i) if not k == 'next')
             bookmark['delbookmark'] = i['url']
-            i.update({'cm': [{'title': 32502, 'query': {'action': 'deleteBookmark', 'url': json.dumps(bookmark)}}]})
+            i.update({'cm': [{'title': 30502, 'query': {'action': 'deleteBookmark', 'url': json.dumps(bookmark)}}]})
 
         self.list = sorted(self.list, key=lambda k: k['title'].lower())
 
@@ -162,7 +158,7 @@ class Indexer:
 
             bookmark = dict((k, v) for k, v in iteritems(i) if not k == 'next')
             bookmark['bookmark'] = i['url']
-            i.update({'cm': [{'title': 32501, 'query': {'action': 'addBookmark', 'url': json.dumps(bookmark)}}]})
+            i.update({'cm': [{'title': 30501, 'query': {'action': 'addBookmark', 'url': json.dumps(bookmark)}}]})
 
         control.sortmethods('title')
 
@@ -197,7 +193,7 @@ class Indexer:
         for i in self.list:
             bookmark = dict((k, v) for k, v in iteritems(i) if not k == 'next')
             bookmark['bookmark'] = i['url']
-            i.update({'cm': [{'title': 32501, 'query': {'action': 'addBookmark', 'url': json.dumps(bookmark)}}]})
+            i.update({'cm': [{'title': 30501, 'query': {'action': 'addBookmark', 'url': json.dumps(bookmark)}}]})
 
         directory.add(self.list, infotype='Music')
 
@@ -220,58 +216,39 @@ class Indexer:
 
     def directory_list(self, url):
 
-        try:
+        self.list = []
 
-            self.list = []
+        result = client.request(url, mobile=True, output='json')
 
-            result = client.request(url, mobile=True)
-            result = json.loads(result)
-
-            if 'categories' in result:
-                items = result['categories']
-            elif 'countries' in result:
-                items = result['countries']
-
-        except:
-
-            return
+        if 'categories' in result:
+            items = result['categories']
+        else:
+            items = result['countries']
 
         for item in items:
 
-            try:
+            if 'categoryName' in item:
+                title = item['categoryName']
+            else:
+                title = item['regionName']
+            title = client.replaceHTMLCodes(title)
 
-                if 'categoryName' in item:
-                    title = item['categoryName']
-                elif 'regionName' in item:
-                    title = item['regionName']
-                title = client.replaceHTMLCodes(title)
+            if 'categoryID' in item:
+                url = self.category_link.format(str(item['categoryID']))
+            elif 'regionID' in item:
+                url = self.region_link.format(str(item['regionID']))
+            url = client.replaceHTMLCodes(url)
 
-                if 'categoryID' in item:
-                    url = self.category_link.format(str(item['categoryID']))
-                elif 'regionID' in item:
-                    url = self.region_link.format(str(item['regionID']))
-                url = client.replaceHTMLCodes(url)
-
-                self.list.append({'title': title, 'url': url})
-
-            except:
-
-                pass
+            self.list.append({'title': title, 'url': url})
 
         return self.list
 
     def radios_list(self, url):
 
-        try:
+        result = client.request(url, mobile=True)
+        result = json.loads(result)
 
-            result = client.request(url, mobile=True)
-            result = json.loads(result)
-
-            items = result['media']
-
-        except:
-
-            return
+        items = result['media']
 
         for item in items:
 
@@ -302,38 +279,32 @@ class Indexer:
 
     def resolve(self, url):
 
-        try:
+        url = self.resolve_link.format(url)
 
-            url = self.resolve_link.format(url)
+        result = client.request(url, mobile=True)
+        result = json.loads(result)
 
-            result = client.request(url, mobile=True)
-            result = json.loads(result)
+        item = result['media'][0]
 
-            item = result['media'][0]
+        url = item['mediaUrl'][0]['liveURL']
 
-            url = item['mediaUrl'][0]['liveURL']
+        if not url.startswith('http://'):
+            url = '{0}{1}'.format('http://', url)
 
-            if not url.startswith('http://'):
-                url = '{0}{1}'.format('http://', url)
+        url = client.replaceHTMLCodes(url)
 
-            url = client.replaceHTMLCodes(url)
+        # url = client.request(url, output='geturl')
 
-            # url = client.request(url, output='geturl')
+        title = item['name'].strip()
+        title = client.replaceHTMLCodes(title)
 
-            title = item['name'].strip()
-            title = client.replaceHTMLCodes(title)
+        image = item['logo']
+        image = self.image_link.format(image)
+        image = image.replace('/promo/', '/500/')
 
-            image = item['logo']
-            image = self.image_link.format(image)
-            image = image.replace('/promo/', '/500/')
+        if image.endswith('/nologo.png'):
+            image = '0'
 
-            if image.endswith('/nologo.png'):
-                image = '0'
+        image = client.replaceHTMLCodes(image)
 
-            image = client.replaceHTMLCodes(image)
-
-            return title, url, image
-
-        except:
-
-            pass
+        return title, url, image
