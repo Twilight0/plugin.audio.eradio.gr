@@ -41,5 +41,9 @@ elif action == 'dev_picks':
 elif action == 'search':
     eradio.Indexer().search()
 
+elif action == 'cache_clear':
+    from tulip.cache import FunctionCache
+    FunctionCache().reset_cache(notify=True, label_success=30008)
+
 elif action in ['play', 'dev_play']:
     eradio.Indexer().play(url, do_not_resolve=action == 'dev_play')

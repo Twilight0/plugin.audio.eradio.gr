@@ -36,6 +36,14 @@ msgctxt "#30007"
 msgid "No bookmarks found"
 msgstr "Δεν βρέθηκαν σελιδοδείκτες"
 
+msgctxt "#30008"
+msgid "Done"
+msgstr "Έγινε"
+
+msgctxt "#30009"
+msgid "Clear function cache"
+msgstr "Καθαρισμός μνήμης λειτουργιών"
+
 msgctxt "#30500"
 msgid "Next..."
 msgstr "Επόμενα..."

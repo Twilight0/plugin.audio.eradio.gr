@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.audio.eradio.gr" version="2.0.0" name="E-Radio" provider-name="Twilight0">
+<addon id="plugin.audio.eradio.gr" version="2.1.0" name="E-Radio" provider-name="Twilight0">
     <requires>
         <import addon="xbmc.addon" version="16.1.000"/>
-        <import addon="script.module.tulip" version="2.8.6"/>
+        <import addon="script.module.tulip" version="2.8.17"/>
     </requires>
     <extension point="xbmc.python.pluginsource" library="addon.py">
         <provides>audio</provides>
@@ -18,7 +18,10 @@
         <license>GPL-3.0-only</license>
         <source>https://github.com/Twilight0/plugin.audio.eradio.gr</source>
         <website>http://www.e-radio.gr/</website>
-        <news>[B]2.0.0[/B]
+        <news>[B]2.1.0[/B]
+- Change cache method
+
+[B]2.0.0[/B]
 - Version made to be compatible with Kodi Matrix (&amp; Python 3.X)
 - Improved performance by enabling reuse language invoker
 - Various minor tweaks

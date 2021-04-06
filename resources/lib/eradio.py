@@ -16,6 +16,9 @@ from tulip.compat import unicode, iteritems
 from tulip.cleantitle import strip_accents
 
 
+cache_method = cache.FunctionCache().cache_method
+
+
 class Indexer:
 
     def __init__(self):
@@ -23,15 +26,15 @@ class Indexer:
         self.list = []; self.data = []
         self.base_link = 'http://eradio.mobi'
         self.image_link = 'http://cdn.e-radio.gr/logos/{0}'
-        self.all_link = 'http://eradio.mobi/cache/1/1/medialist.json'
-        self.trending_link = 'http://eradio.mobi/cache/1/1/medialistTop_trending.json'
-        self.popular_link = 'http://eradio.mobi/cache/1/1/medialist_top20.json'
-        self.new_link = 'http://eradio.mobi/cache/1/1/medialist_new.json'
-        self.categories_link = 'http://eradio.mobi/cache/1/1/categories.json'
-        self.regions_link = 'http://eradio.mobi/cache/1/1/regions.json'
-        self.category_link = 'http://eradio.mobi/cache/1/1/medialist_categoryID{0}.json'
-        self.region_link = 'http://eradio.mobi/cache/1/1/medialist_regionID{0}.json'
-        self.resolve_link = 'http://eradio.mobi/cache/1/1/media/{0}.json'
+        self.all_link = ''.join([self.base_link, '/cache/1/1/medialist.json'])
+        self.trending_link = ''.join([self.base_link, '/cache/1/1/medialistTop_trending.json'])
+        self.popular_link = ''.join([self.base_link, '/cache/1/1/medialist_top20.json'])
+        self.new_link = ''.join([self.base_link, '/cache/1/1/medialist_new.json'])
+        self.categories_link = ''.join([self.base_link, '/cache/1/1/categories.json'])
+        self.regions_link = ''.join([self.base_link, '/cache/1/1/regions.json'])
+        self.category_link = ''.join([self.base_link, '/cache/1/1/medialist_categoryID{0}.json'])
+        self.region_link = ''.join([self.base_link, '/cache/1/1/medialist_regionID{0}.json'])
+        self.resolve_link = ''.join([self.base_link, '/cache/1/1/media/{0}.json'])
 
     def root(self):
 
@@ -77,7 +80,7 @@ class Indexer:
             }
         ]
 
-        categories = cache.get(self.directory_list, 24, self.categories_link)
+        categories = self.directory_list(self.categories_link)
 
         if categories is None:
             return
@@ -85,7 +88,7 @@ class Indexer:
         for i in categories:
             i.update({'icon': 'categories.png', 'action': 'radios'})
 
-        regions = cache.get(self.directory_list, 24, self.regions_link)
+        regions = self.directory_list(self.regions_link)
 
         if regions is None:
             return
@@ -96,6 +99,11 @@ class Indexer:
         dev_picks_list = [{'title': control.lang(30503), 'action': 'dev_picks', 'icon': 'recommended.png'}]
 
         self.list = radios + dev_picks_list + categories + regions
+
+        for item in self.list:
+
+            cache_clear = {'title': 30009, 'query': {'action': 'cache_clear'}}
+            item.update({'cm': [cache_clear]})
 
         directory.add(self.list, content='files')
 
@@ -142,7 +150,7 @@ class Indexer:
 
     def radios(self, url, return_listing=False):
 
-        self.list = cache.get(self.radios_list, 1, url)
+        self.list = self.radios_list(url)
 
         if self.list is None:
             return
@@ -152,7 +160,7 @@ class Indexer:
 
         if url == self.all_link:
 
-            self.list.extend(cache.get(self._devpicks, 6))
+            self.list.extend(self._devpicks())
 
         for i in self.list:
 
@@ -167,6 +175,7 @@ class Indexer:
         else:
             directory.add(self.list, infotype='Music')
 
+    @cache_method(360)
     def _devpicks(self):
 
         xml = client.request('http://alivegr.net/raw/radios.xml')
@@ -185,7 +194,7 @@ class Indexer:
 
     def dev_picks(self):
 
-        self.list = cache.get(self._devpicks, 6)
+        self.list = self._devpicks()
 
         if self.list is None:
             return
@@ -202,18 +211,19 @@ class Indexer:
         if not do_not_resolve:
 
             resolved = self.resolve(url)
-    
+
             if resolved is None:
                 return
-    
+
             title, url, image = resolved
-    
+
             directory.resolve(url, {'title': title}, image)
-            
+
         else:
 
             directory.resolve(url)
 
+    @cache_method(1440)
     def directory_list(self, url):
 
         self.list = []
@@ -243,6 +253,7 @@ class Indexer:
 
         return self.list
 
+    @cache_method(60)
     def radios_list(self, url):
 
         result = client.request(url, mobile=True)

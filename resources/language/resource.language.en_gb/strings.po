@@ -36,6 +36,14 @@ msgctxt "#30007"
 msgid "No bookmarks found"
 msgstr ""
 
+msgctxt "#30008"
+msgid "Done"
+msgstr ""
+
+msgctxt "#30009"
+msgid "Clear function cache"
+msgstr ""
+
 msgctxt "#30500"
 msgid "Next..."
 msgstr ""
